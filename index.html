@@ -4,9 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NEXUS SYS - Smart Station</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1"></script>
+    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
     
     <style>
@@ -58,7 +64,6 @@
         .btn-action-off { background: rgba(255,0,60,0.1); border: 1px solid var(--neon-red); color: var(--neon-red); }
         .btn-action-off:hover { background: var(--neon-red); color: #fff; box-shadow: 0 0 20px var(--neon-red); }
 
-        /* การซ่อน/โชว์ หน้าเว็บ */
         .page-section { display: none; animation: fadeIn 0.4s; }
         .page-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
@@ -71,7 +76,6 @@
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
         <h2 style="font-family: 'Orbitron', sans-serif; text-shadow: 0 0 10px var(--neon-blue);"><i class="fa-solid fa-satellite-dish text-info"></i> BKR NEXUS SYS</h2>
-        
         <div class="d-flex align-items-center gap-2">
             <div id="mode-indicator" class="badge border border-success text-success" style="background: rgba(0,255,102,0.1); font-family: 'Orbitron', sans-serif; padding: 8px 12px; letter-spacing: 1px;">
                 <i class="fa-solid fa-wifi"></i> CLOUD MODE
@@ -81,6 +85,7 @@
             </button>
         </div>
     </div>
+
     <div id="page-home" class="page-section active">
         <div class="row">
             <div class="col-md-5">
@@ -92,7 +97,6 @@
                             <div class="ph-label">pH Level</div>
                         </div>
                     </div>
-                    
                     <div class="glass-card trash-card mt-4 text-start">
                         <div class="d-flex align-items-center">
                             <i class="fa-solid fa-triangle-exclamation text-warning fs-3 me-3"></i>
@@ -108,23 +112,26 @@
             <div class="col-md-7">
                 <div class="glass-card h-100">
                     <div class="d-flex justify-content-between mb-3">
-                        <h5 class="text-secondary"><i class="fa-solid fa-chart-line"></i> TODAY'S DATA</h5>
+                        <h5 class="text-secondary"><i class="fa-solid fa-chart-line"></i> REALTIME DATA</h5>
                         <div>
                             <span class="badge bg-danger me-2" id="today-max-ph">Max: --</span>
                             <span class="badge bg-info" id="today-min-ph">Min: --</span>
                         </div>
                     </div>
-                    <canvas id="todayChart" height="150"></canvas>
+                    
+                    <div style="height: 200px;">
+                        <canvas id="todayChart"></canvas>
+                    </div>
                     
                     <div class="row mt-4">
                         <div class="col-6 d-grid">
                             <button class="btn btn-cyber" onclick="navTo('page-relay')">
-                                <i class="fa-solid fa-bolt"></i> ระบบควบคุมปั้มน้ำ (Relay)
+                                <i class="fa-solid fa-bolt"></i> ควบคุมปั้มน้ำ (Relay)
                             </button>
                         </div>
                         <div class="col-6 d-grid">
                             <button class="btn btn-cyber" onclick="navTo('page-history')">
-                                <i class="fa-solid fa-database"></i> ดูประวัติย้อนหลัง
+                                <i class="fa-solid fa-database"></i> ประวัติย้อนหลัง
                             </button>
                         </div>
                     </div>
@@ -135,7 +142,6 @@
 
     <div id="page-relay" class="page-section">
         <button class="btn btn-outline-secondary mb-3" onclick="navTo('page-home')"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
-        
         <div class="row">
             <div class="col-md-6">
                 <div class="glass-card h-100">
@@ -156,7 +162,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="col-md-6">
                 <div class="glass-card h-100">
                     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -172,7 +177,6 @@
 
     <div id="page-history" class="page-section">
         <button class="btn btn-outline-secondary mb-3" onclick="navTo('page-home')"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
-        
         <div class="glass-card">
             <h5 class="text-secondary mb-3"><i class="fa-regular fa-calendar-days"></i> ดูข้อมูลรายวัน</h5>
             <div class="input-group mb-4" style="max-width: 300px;">
@@ -194,14 +198,13 @@
 </div>
 
 <script>
-    // ฟังก์ชันนี้ทำงานได้ทันที ไม่ต้องรอ Firebase
+    // การเปลี่ยนหน้า UI
     function navTo(pageId) {
         document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
-        window.scrollTo(0, 0); // เลื่อนขึ้นบนสุดเมื่อเปลี่ยนหน้า
+        window.scrollTo(0, 0);
     }
 
-    // ฟังก์ชันเพิ่มช่องตารางเวลาในหน้า UI
     let scheduleCount = 0;
     function addScheduleSlot(start = "", end = "") {
         scheduleCount++;
@@ -221,12 +224,12 @@
 </script>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
     import { getDatabase, ref, onValue, set, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBDq_9EK3HAcgeecJEbpR5HVqzkuWhfmDk",
-        databaseURL: "flutter-ai-playground-84f49-default-rtdb.firebaseio.com",
+        databaseURL: "https://flutter-ai-playground-84f49-default-rtdb.firebaseio.com",
         projectId: "flutter-ai-playground-84f49"
     };
 
@@ -238,13 +241,101 @@
         console.error("Firebase init error:", error);
     }
 
-    // === ตัวแปรสำหรับ Bluetooth ===
     let bleRelayChar = null;
 
     if (db) {
-        // อัปเดตวงกลม pH
+        // =======================================================
+        // ✅ สร้างกราฟวิ่ง (Real-time Streaming Chart)
+        // =======================================================
+        const ctx = document.getElementById('todayChart').getContext('2d');
+        const todayChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'pH Level',
+                    data: [], 
+                    borderColor: '#00f3ff',
+                    backgroundColor: 'rgba(0, 243, 255, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 3, 
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'realtime', // โหมดกราฟวิ่ง
+                        realtime: {
+                            delay: 2000, 
+                            duration: 300000, // โชว์ข้อมูลย้อนหลัง 5 นาที
+                            refresh: 1000 
+                        },
+                        time: {
+                            displayFormats: { second: 'HH:mm:ss' }
+                        },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: '#aaa' }
+                    },
+                    y: {
+                        min: 0,
+                        max: 14,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: '#aaa' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    // ✅ ระบบ Tooltip (ชี้แล้วโชว์เลข)
+                    tooltip: {
+                        enabled: true,
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#00f3ff',
+                        bodyColor: '#fff',
+                        borderColor: '#00f3ff',
+                        borderWidth: 1,
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                return new Date(tooltipItems[0].parsed.x).toLocaleTimeString('th-TH');
+                            },
+                            label: function(context) {
+                                return ` pH: ${context.parsed.y.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+
+        // ฟังก์ชันคำนวณ Max/Min ของกราฟ
+        function updateMaxMin(chartData) {
+            if(chartData.length === 0) return;
+            let max = -99; let min = 99;
+            chartData.forEach(point => {
+                if(point.y > max) max = point.y;
+                if(point.y < min) min = point.y;
+            });
+            document.getElementById('today-max-ph').innerText = `Max: ${max.toFixed(2)}`;
+            document.getElementById('today-min-ph').innerText = `Min: ${min.toFixed(2)}`;
+        }
+
+        // =======================================================
+        // ✅ อัปเดตข้อมูล UI และ กราฟพร้อมกัน (เมื่อมีข้อมูลใหม่)
+        // =======================================================
         onValue(ref(db, 'sensor/ph'), (snapshot) => {
             const val = snapshot.val() || 0;
+            
+            // 1. อัปเดตวงกลมตัวเลข
             document.getElementById('ph-display').innerText = val.toFixed(2);
             const circle = document.getElementById('ph-circle-ui');
             let color = 'var(--neon-green)';
@@ -252,9 +343,199 @@
             if (val > 7.5) color = 'var(--neon-red)';
             circle.style.borderColor = color;
             circle.style.boxShadow = `0 0 30px ${color}, inset 0 0 20px ${color}`;
+
+            // 2. เติมข้อมูลลงกราฟวิ่ง
+            // =======================================================
+        // =======================================================
+        // ✅ 1. สร้างกราฟแบบ "ดูทั้งวัน" และ "ซูมได้" (Zoom & Pan)
+        // =======================================================
+        const todayStr = new Date().toISOString().split('T')[0];
+        const ctx = document.getElementById('todayChart').getContext('2d');
+        
+        const todayChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'pH Level',
+                    data: [], // ปล่อยว่างไว้ รอโหลด
+                    borderColor: '#00f3ff',
+                    backgroundColor: 'rgba(0, 243, 255, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.1, // ลดความย้วย ให้เส้นดูเฉียบคมขึ้น
+                    pointRadius: 1, // ลดขนาดจุดลง เพื่อให้เห็นเส้นชัดกว่า
+                    pointHoverRadius: 6,
+                    spanGaps: true // ✅ โค้ดสำคัญ! บังคับลากเส้นเชื่อมกันเสมอ แม้มีช่วงเวลาขาดหาย
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'time', 
+                        time: {
+                            unit: 'minute',
+                            displayFormats: { minute: 'HH:mm', hour: 'HH:mm' }
+                        },
+                        min: todayStr + 'T00:00:00', // ล็อกเวลาเริ่ม 00:00
+                        max: todayStr + 'T23:59:59', // ล็อกเวลาจบ 23:59
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: '#aaa' }
+                    },
+                    y: {
+                        min: 0,
+                        max: 14,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: '#aaa' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index', intersect: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)', titleColor: '#00f3ff',
+                        callbacks: {
+                            title: (tooltipItems) => new Date(tooltipItems[0].parsed.x).toLocaleTimeString('th-TH'),
+                            label: (context) => ` pH: ${context.parsed.y.toFixed(2)}`
+                        }
+                    },
+                    zoom: {
+                        pan: { enabled: true, mode: 'x' },
+                        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }
+                    }
+                }
+            }
         });
 
-        // อัปเดตแจ้งเตือนขยะ
+        // =======================================================
+        // ✅ 2. ระบบจัดการข้อมูล (โหลดประวัติก่อน -> ค่อยรับ Real-time)
+        // =======================================================
+        let globalMax = -99; 
+        let globalMin = 99;
+
+        import { get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        
+        // ขั้นตอนที่ 1: โหลดกราฟของทั้งวันมาก่อน (เพื่อไม่ให้ไปลบข้อมูลใหม่)
+        get(ref(db, 'history/' + todayStr)).then((snapshot) => {
+            if(snapshot.exists()) {
+                const data = snapshot.val();
+                let points = [];
+                for(let timeKey in data) {
+                    let ph = data[timeKey].ph !== undefined ? data[timeKey].ph : data[timeKey];
+                    // แปลงเวลาให้อยู่ในรูปแบบตัวเลข (Timestamp) ป้องกันกราฟงง
+                    points.push({ x: new Date(todayStr + 'T' + timeKey).getTime(), y: ph });
+                    
+                    if (ph > globalMax) globalMax = ph;
+                    if (ph < globalMin) globalMin = ph;
+                }
+                points.sort((a, b) => a.x - b.x); // เรียงเวลาจากอดีต->ปัจจุบัน
+                
+                todayChart.data.datasets[0].data = points;
+                todayChart.update();
+                
+                document.getElementById('today-max-ph').innerText = `Max: ${globalMax.toFixed(2)}`;
+                document.getElementById('today-min-ph').innerText = `Min: ${globalMin.toFixed(2)}`;
+            }
+            
+            // ขั้นตอนที่ 2: พอโหลดประวัติเสร็จ "ค่อยเปิดประตู" รับข้อมูล Real-time ทุก 2 วิ
+            onValue(ref(db, 'sensor/ph'), (snap) => {
+                const val = snap.val() || 0;
+                
+                // อัปเดต UI วงกลม
+                document.getElementById('ph-display').innerText = val.toFixed(2);
+                const circle = document.getElementById('ph-circle-ui');
+                let color = 'var(--neon-green)';
+                if (val < 6.5) color = 'var(--neon-yellow)';
+                if (val > 7.5) color = 'var(--neon-red)';
+                circle.style.borderColor = color;
+                circle.style.boxShadow = `0 0 30px ${color}, inset 0 0 20px ${color}`;
+
+                // อัปเดต Max/Min
+                let isNewMaxMin = false;
+                if (val > globalMax) { globalMax = val; isNewMaxMin = true; }
+                if (val < globalMin) { globalMin = val; isNewMaxMin = true; }
+                if (isNewMaxMin) {
+                    document.getElementById('today-max-ph').innerText = `Max: ${globalMax.toFixed(2)}`;
+                    document.getElementById('today-min-ph').innerText = `Min: ${globalMin.toFixed(2)}`;
+                }
+
+                // ดันจุดใหม่เข้ากราฟ (ใช้ Date.now() เป็นตัวเลข)
+                if (todayChart) {
+                    todayChart.data.datasets[0].data.push({
+                        x: Date.now(),
+                        y: val
+                    });
+                    todayChart.update('quiet'); // ลากเส้นต่อทันทีโดยไม่กระตุก
+                }
+            });
+        });
+        // =======================================================
+        // ✅ ระบบจัดการข้อมูลกราฟ (Load History + Real-time Append)
+        // =======================================================
+        let globalMax = -99; 
+        let globalMin = 99;
+
+        // 1. ดึงข้อมูลประวัติของ "วันนี้ทั้งวัน" มาวาดลงกราฟก่อน (ทำครั้งเดียวตอนเปิดเว็บ)
+        import { get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        
+        get(ref(db, 'history/' + todayStr)).then((snapshot) => {
+            if(snapshot.exists()) {
+                const data = snapshot.val();
+                let points = [];
+                for(let timeKey in data) {
+                    let ph = data[timeKey].ph !== undefined ? data[timeKey].ph : data[timeKey];
+                    points.push({ x: todayStr + 'T' + timeKey, y: ph });
+                    if (ph > globalMax) globalMax = ph;
+                    if (ph < globalMin) globalMin = ph;
+                }
+                // เรียงเวลาให้ถูกต้อง
+                points.sort((a, b) => new Date(a.x) - new Date(b.x));
+                
+                todayChart.data.datasets[0].data = points;
+                todayChart.update();
+                
+                document.getElementById('today-max-ph').innerText = `Max: ${globalMax.toFixed(2)}`;
+                document.getElementById('today-min-ph').innerText = `Min: ${globalMin.toFixed(2)}`;
+            }
+        });
+
+        // 2. รอรับค่า Real-time แล้วนำมา "ต่อท้าย" กราฟเรื่อยๆ
+        onValue(ref(db, 'sensor/ph'), (snapshot) => {
+            const val = snapshot.val() || 0;
+            
+            // อัปเดต UI วงกลม
+            document.getElementById('ph-display').innerText = val.toFixed(2);
+            const circle = document.getElementById('ph-circle-ui');
+            let color = 'var(--neon-green)';
+            if (val < 6.5) color = 'var(--neon-yellow)';
+            if (val > 7.5) color = 'var(--neon-red)';
+            circle.style.borderColor = color;
+            circle.style.boxShadow = `0 0 30px ${color}, inset 0 0 20px ${color}`;
+
+            // หาค่า Max/Min ใหม่
+            let isNewMaxMin = false;
+            if (val > globalMax) { globalMax = val; isNewMaxMin = true; }
+            if (val < globalMin) { globalMin = val; isNewMaxMin = true; }
+            if (isNewMaxMin) {
+                document.getElementById('today-max-ph').innerText = `Max: ${globalMax.toFixed(2)}`;
+                document.getElementById('today-min-ph').innerText = `Min: ${globalMin.toFixed(2)}`;
+            }
+
+            // เติมจุดลงไปท้ายกราฟ
+            if (todayChart) {
+                todayChart.data.datasets[0].data.push({
+                    x: Date.now(),
+                    y: val
+                });
+                todayChart.update('quiet'); // 'quiet' คือให้อัปเดตเงียบๆ ไม่ต้องเด้งแอนิเมชันใหม่หมด
+            }
+        });
+
+        // =======================================================
+        // โค้ดเดิมของคุณที่เหลือ (แจ้งเตือน, Relay, ดูประวัติ) ปลอดภัย 100%
+        // =======================================================
+
         onValue(ref(db, 'sensor/distance'), (snapshot) => {
             const dist = snapshot.val() || 0;
             if(dist > 0 && dist < 30) {
@@ -271,7 +552,6 @@
             }
         });
 
-        // ระบบควบคุม Relay
         onValue(ref(db, 'control/relay'), (snapshot) => {
             const status = snapshot.val();
             const textEl = document.getElementById('relay-status-text');
@@ -279,15 +559,12 @@
             textEl.className = status ? "text-success fw-bold text-shadow-glow" : "text-danger fw-bold";
         });
 
-        // === อัปเดตฟังก์ชัน Relay ให้รองรับ Bluetooth ควบคู่กับ Firebase ===
         window.setRelay = async function(state) { 
-            // สั่งงานผ่าน Bluetooth หากเชื่อมต่ออยู่ (รวดเร็วทันใจ)
             if (bleRelayChar) {
                 try {
-                    await bleRelayChar.writeValue(new Uint8Array([state ? 49 : 48])); // '1' หรือ '0'
+                    await bleRelayChar.writeValue(new Uint8Array([state ? 49 : 48]));
                 } catch(e) { console.error("BLE Send Error", e); }
             }
-            // อัปเดตขึ้น Cloud (Firebase) ตามปกติ
             set(ref(db, 'control/relay'), state); 
         };
 
@@ -299,7 +576,6 @@
             }
         };
 
-        // ระบบ Schedule
         window.saveSchedules = function() {
             const rows = document.querySelectorAll('.schedule-row');
             let schedules = {};
@@ -321,37 +597,10 @@
             }
         });
 
-        // กราฟวันนี้
+        // ตารางย้อนหลัง
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('history-date').value = todayStr;
-        let todayChart;
-        Chart.defaults.color = '#aaa';
 
-        onValue(ref(db, 'history/' + todayStr), (snapshot) => {
-            if(snapshot.exists()) {
-                const data = snapshot.val();
-                let labels = []; let phData = []; let max = -99; let min = 99;
-                for(let time in data) {
-                    labels.push(time);
-                    let ph = data[time].ph || data[time]; // เผื่อโครงสร้างข้อมูลเปลี่ยน
-                    phData.push(ph);
-                    if(ph > max) max = ph;
-                    if(ph < min) min = ph;
-                }
-                document.getElementById('today-max-ph').innerText = `Max: ${max.toFixed(2)}`;
-                document.getElementById('today-min-ph').innerText = `Min: ${min.toFixed(2)}`;
-
-                if(todayChart) todayChart.destroy();
-                const ctx = document.getElementById('todayChart').getContext('2d');
-                todayChart = new Chart(ctx, {
-                    type: 'line',
-                    data: { labels: labels, datasets: [{ label: 'pH Level', data: phData, borderColor: '#00f3ff', backgroundColor: 'rgba(0, 243, 255, 0.1)', borderWidth: 2, fill: true, tension: 0.4 }] },
-                    options: { responsive: true, scales: { x: { display: false }, y: { min: 0, max: 14 } } }
-                });
-            }
-        });
-
-        // ตารางย้อนหลัง
         window.loadSpecificHistory = function() {
             const date = document.getElementById('history-date').value;
             const tbody = document.getElementById('history-table-body');
@@ -363,7 +612,7 @@
                     for(let time in data) {
                         let ph = data[time].ph || data[time];
                         let dist = data[time].distance || data[time].dist || 0;
-                        tbody.innerHTML += `<tr><td>${time}</td><td><span class="text-info">${ph.toFixed(2)}</span></td><td>${dist.toFixed(1)}</td></tr>`;
+                        tbody.innerHTML += `<tr><td>${time}</td><td><span class="text-info">${parseFloat(ph).toFixed(2)}</span></td><td>${parseFloat(dist).toFixed(1)}</td></tr>`;
                     }
                 } else {
                     tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">ไม่พบข้อมูลของวันที่เลือก</td></tr>`;
@@ -373,41 +622,36 @@
         loadSpecificHistory();
     }
 
-    // === ระบบ Bluetooth Gateway (เพิ่มใหม่ โค้ดเดิมไม่กระทบ) ===
+    // === ระบบ Bluetooth Gateway ===
     window.connectBluetooth = async function() {
         const indicator = document.getElementById('mode-indicator');
         try {
             indicator.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> SCANNING...`;
             
             const device = await navigator.bluetooth.requestDevice({
-                filters: [{ name: 'ESP32_Agri_Board' }], // ชื่อบอร์ดใน ESP32
+                filters: [{ name: 'ESP32_Agri_Board' }],
                 optionalServices: ['19b10000-e8f2-537e-4f6c-d104768a1214']
             });
             
             const server = await device.gatt.connect();
             const service = await server.getPrimaryService('19b10000-e8f2-537e-4f6c-d104768a1214');
             
-            // อ่านค่า Sensor ผ่าน BLE
             const sensorChar = await service.getCharacteristic('19b10001-e8f2-537e-4f6c-d104768a1214');
             await sensorChar.startNotifications();
             sensorChar.addEventListener('characteristicvaluechanged', (event) => {
                 let data = JSON.parse(new TextDecoder().decode(event.target.value));
-                // โยนขึ้น Firebase ผ่านเน็ตมือถือ (Gateway)
                 if(db) {
                     set(ref(db, 'sensor/ph'), data.ph);
                     set(ref(db, 'sensor/distance'), data.dist);
                 }
             });
 
-            // เชื่อมช่องสัญญาณส่งคำสั่ง Relay
             bleRelayChar = await service.getCharacteristic('19b10002-e8f2-537e-4f6c-d104768a1214');
             
-            // เปลี่ยนสถานะมุมขวาบนให้เป็นสีฟ้า (Bluetooth Mode)
             indicator.className = "badge border border-info text-info";
             indicator.style.background = "rgba(0, 243, 255, 0.1)";
             indicator.innerHTML = `<i class="fa-brands fa-bluetooth-b"></i> BLE GATEWAY`;
             
-            // ดักจับเมื่อบลูทูธหลุด ให้กลับไปโหมด Wi-Fi สีเขียว
             device.addEventListener('gattserverdisconnected', () => {
                 indicator.className = "badge border border-success text-success";
                 indicator.style.background = "rgba(0, 255, 102, 0.1)";
